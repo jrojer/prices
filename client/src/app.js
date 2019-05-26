@@ -18,7 +18,6 @@ var app = {
             products: [],
             purchases_by_date: [],
             purchases_offset: 0,
-            all_purchases_loaded: false
         };
         this.table_rows = {
             products: [],
@@ -29,11 +28,14 @@ var app = {
             tab: Tab.products,
             activate_modal: false,
             modal_product_list: false,
+            // data
+            data_product_loaded: false,
+            data_product_loading: false,
+            data_purchases_loaded: false,
+            data_purchases_loading: false
         };
         this.cacheDom();
-        //this.changeState();
-        this.load('products').done(this.changeState.bind(this));
-        this.load('purchases');
+        this.changeState();
     },
     load: function (type) {
         if(type == 'purchases'){
@@ -45,12 +47,14 @@ var app = {
                 }
                 */
                 this.data.purchases_by_date.push(...data.purchases_by_date);
-                this.data.purchases_offset+=1;
+                this.state.data_purchases_loaded = true;
+                //this.data.purchases_offset+=1;
             }).bind(this));
         }
         else{ // type == products
             return $.getJSON('/get_product_list',(function(data){
                 this.data.products = data.products;
+                this.state.data_product_loaded = true;
             }).bind(this));
         }
     },
@@ -86,7 +90,7 @@ var app = {
         this.$radioEdit = $('#radio_edit_on');
     },
     constructProductTable: function(){   
-        this.table_rows.products = [];
+        this.table_rows.products = []; // TODO maybe rename to shows it's for cache
         let $tbody = $('<tbody>');
         let $table = $('<table>').addClass('table table-hover table-striped').append($tbody);
         for (let i = 0; i < this.data.products.length; ++i) {
@@ -102,7 +106,6 @@ var app = {
 
         if (this.state.tab == Tab.products) {
 
-            this.$product_table = this.$product_table || this.constructProductTable();
 
             if (this.state.activate_modal) // modal
             {
@@ -123,14 +126,27 @@ var app = {
                 this.$purchases_div.hide();
                 this.$products_div.show();
 
-                //this.$products_div.find('table').remove();
-                this.$products_div.append(this.$product_table);
-                this.$product_table.show();
+                // clear
+                this.$products_div.empty();
+
+                this.$product_table = this.constructProductTable();
+
+                if(!this.state.data_product_loaded)
+                {
+                    let $loading_message = $('<p>').text('Loading...');
+                    this.$products_div.append($loading_message);
+                }
+                else
+                {
+                    this.$products_div.append(this.$product_table);
+                    this.$product_table.show();
+                }
             }
         } else if (this.state.tab == Tab.purchases) {
 
+            //this.$product_table.hide();
+
             //this.$purchase_table = this.$purchase_table || this.constructPurchasesTable();
-            this.$product_table.hide();
 
             if (this.state.activate_modal) // modal
             {
@@ -146,7 +162,7 @@ var app = {
                     this.purchases_form.$form.show();
                 }
                 this.$modal.modal('show');
-            } else {
+            } else { // tables
                 // change active tab of navbar buttons
                 this.$navbar_purchases_link.removeClass('active');
                 this.$navbar_product_link.addClass('active');
@@ -157,25 +173,32 @@ var app = {
                 // clear
                 this.$purchases_div.empty();
 
-                for (let i = 0; i < this.data.purchases_by_date.length; ++i) {
-                    let date = this.data.purchases_by_date[i].date;
-                    let purchases = this.data.purchases_by_date[i].purchases;
+                if(!this.state.data_purchases_loaded)
+                {
+                    let $loading_message = $('<p>').text('Loading...');
+                    this.$purchases_div.append($loading_message);
+                }
+                else { // render purchases tables
+                    for (let i = 0; i < this.data.purchases_by_date.length; ++i) {
+                        let date = this.data.purchases_by_date[i].date;
+                        let purchases = this.data.purchases_by_date[i].purchases;
 
-                    let $header_div = $('<div>').addClass('d-flex justify-content-between').append($('<h3>').text(date));
-                    let $tbody = $('<tbody>');
-                    let $table = $('<table>').addClass('table table-sm table-striped table-hover').append($tbody);
-                    let $table_div = $('<div>').addClass('table-responsive').append($table);
-                    this.$purchases_div.append($header_div).append($table_div);
+                        let $header_div = $('<div>').addClass('d-flex justify-content-between').append($('<h3>').text(date));
+                        let $tbody = $('<tbody>');
+                        let $table = $('<table>').addClass('table table-sm table-striped table-hover').append($tbody);
+                        let $table_div = $('<div>').addClass('table-responsive').append($table);
+                        this.$purchases_div.append($header_div).append($table_div);
 
-                    for (let j = 0; j < purchases.length; ++j) {
-                        let p = purchases[j];
-                        let $row = $('<tr>');
-                        $row.append($('<td>').text(p.product));
-                        $row.append($('<td>').text(p.quantity));
-                        $row.append($('<td>').text(p.cost_rub));
-                        $row.append($('<td>').text(p.comment));
-                        $tbody.append($row);
-                        this.table_rows.purchases.push($row);
+                        for (let j = 0; j < purchases.length; ++j) {
+                            let p = purchases[j];
+                            let $row = $('<tr>');
+                            $row.append($('<td>').text(p.product));
+                            $row.append($('<td>').text(p.quantity));
+                            $row.append($('<td>').text(p.cost_rub));
+                            $row.append($('<td>').text(p.comment));
+                            $tbody.append($row);
+                            this.table_rows.purchases.push($row);
+                        }
                     }
                 }
             }
@@ -184,17 +207,31 @@ var app = {
         }
     },
     changeState: function (e) {
-        if(e.data)
+        if(e && e.data)
         {
             this.state.tab = e.data.tab || this.state.tab;
             this.state.last_clicked_product_row = e.data.product_row || blank_product_row;
             this.state.activate_modal = e.data.modal || false;
             this.state.modal_product_list = e.data.modal_product_list || false;
         }
+
+        if(this.state.tab == Tab.products && !this.state.data_product_loaded && !this.state.data_product_loading)
+        {
+            this.state.data_product_loading = true;
+            this.load('products').done(this.changeState.bind(this));
+        }
+        if (this.state.tab == Tab.purchases && !this.state.data_purchases_loaded && !this.state.data_purchases_loading) 
+        {
+            this.state.data_purchases_loading = true;
+            this.load('purchases').done(this.changeState.bind(this));
+        }
+            
         this.render();
         this.bindEventListeners();
     },
     bindProductTableEventListeners: function(){
+        if(!this.data_product_loaded)
+            return;
         for (let i = 0; i < this.data.products.length; ++i) {
             let p = this.data.products[i];
             let $row = this.table_rows.products[i];
@@ -228,12 +265,6 @@ var app = {
                 modal: true
             }, this.changeState.bind(this));
         } else if (this.state.tab == Tab.purchases) {
-
-            $('#button_next').off().on('click', (function(){
-                this.data.purchases_offset += 10;
-                this.load('purchases',this.data.purchases_offset).done(this.changeState.bind(this));
-            }).bind(this));
-
             if(this.state.activate_modal){
                 if(this.state.modal_product_list){
                     this.bindProductTableEventListeners();
@@ -246,29 +277,9 @@ var app = {
                     }, this.changeState.bind(this));
                 }
             }
-            else{
-                /*
-                {
-                    // if not all data has been loaded yet:
-                    //   if scrollbar is visible and it's on the bottom 
-                    //     or if there is no scrollbar, 
-                    //          load the data
-                    $(window).scroll((function() {
-                        //let there_is_no_scrollbar = function(){
-                        //    return this.get(0).scrollHeight <= this.height();
-                        //};
-                        let scrollbar_is_on_the_bottom = function(){
-                            return $(window).scrollTop() + $(window).height() == $(document).height();
-                        };
-                        //if(this.data.all_purchases_loaded == false && (there_is_no_scrollbar || scrollbar_is_on_the_bottom) )
-                        if(this.data.all_purchases_loaded == false && scrollbar_is_on_the_bottom())
-                        {
-                            this.load('purchases',this.data.purchases_offset).done(this.changeState.bind(this));
-                        }
-                    }).bind(this));
-                }
-                */
-
+            else{ // table event listeners 
+                if(!this.data_purchases_loaded)
+                    return;
                 for (let i=0; i <  this.table_rows.purchases.length; ++i) 
                 {
                     let $row = this.table_rows.purchases[i];
