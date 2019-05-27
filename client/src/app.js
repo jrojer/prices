@@ -100,6 +100,33 @@ var app = {
         }
         return $table;
     },
+    constructPurchasesTables: function()
+    {
+        let result = [];
+        this.table_rows_cache.purchases = [];
+        for (let i = 0; i < this.data.purchases_by_date.length; ++i) {
+            let date = this.data.purchases_by_date[i].date;
+            let purchases = this.data.purchases_by_date[i].purchases;
+
+            let $header_div = $('<div>').addClass('d-flex justify-content-between').append($('<h3>').text(date));
+            let $tbody = $('<tbody>');
+            let $table = $('<table>').addClass('table table-sm table-striped table-hover').append($tbody);
+            let $table_div = $('<div>').addClass('table-responsive').append($table);
+
+            for (let j = 0; j < purchases.length; ++j) {
+                let p = purchases[j];
+                let $row = $('<tr>');
+                $row.append($('<td>').text(p.product));
+                $row.append($('<td>').text(p.quantity));
+                $row.append($('<td>').text(p.cost_rub));
+                $row.append($('<td>').text(p.comment));
+                $tbody.append($row);
+                this.table_rows_cache.purchases.push($row);
+            }
+            result.push({$header_div,$table_div});
+        }
+        return result;
+    },
     fillProductForm: function(pr)
     {
         this.product_form.$id.attr('value', pr.id);
@@ -172,27 +199,9 @@ var app = {
                     this.$purchases_div.append($loading_message);
                 }
                 else { // render purchases tables
-                    this.table_rows_cache.purchases = [];
-                    for (let i = 0; i < this.data.purchases_by_date.length; ++i) {
-                        let date = this.data.purchases_by_date[i].date;
-                        let purchases = this.data.purchases_by_date[i].purchases;
-
-                        let $header_div = $('<div>').addClass('d-flex justify-content-between').append($('<h3>').text(date));
-                        let $tbody = $('<tbody>');
-                        let $table = $('<table>').addClass('table table-sm table-striped table-hover').append($tbody);
-                        let $table_div = $('<div>').addClass('table-responsive').append($table);
-                        this.$purchases_div.append($header_div).append($table_div);
-
-                        for (let j = 0; j < purchases.length; ++j) {
-                            let p = purchases[j];
-                            let $row = $('<tr>');
-                            $row.append($('<td>').text(p.product));
-                            $row.append($('<td>').text(p.quantity));
-                            $row.append($('<td>').text(p.cost_rub));
-                            $row.append($('<td>').text(p.comment));
-                            $tbody.append($row);
-                            this.table_rows_cache.purchases.push($row);
-                        }
+                    let tables = this.constructPurchasesTables();
+                    for (let i = 0; i < tables.length; ++i) {
+                        this.$purchases_div.append(tables[i].$header_div).append(tables[i].$table_div);
                     }
                 }
             }
