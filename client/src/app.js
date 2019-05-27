@@ -28,11 +28,16 @@ var app = {
             tab: Tab.products,
             activate_modal: false,
             modal_product_list: false,
-            // data
-            data_product_loaded: false,
-            data_product_loading: false,
-            data_purchases_loaded: false,
-            data_purchases_loading: false
+            data: {
+                product: {
+                    loaded: false,
+                    loading: false
+                },
+                purchases: {
+                    loaded: false,
+                    loading: false
+                } 
+            },
         };
         this.cacheDom();
         this.changeState();
@@ -47,14 +52,14 @@ var app = {
                 }
                 */
                 this.data.purchases_by_date.push(...data.purchases_by_date);
-                this.state.data_purchases_loaded = true;
+                this.state.data.purchases.loaded = true;
                 //this.data.purchases_offset+=1;
             }).bind(this));
         }
         else{ // type == products
             return $.getJSON('/get_product_list',(function(data){
                 this.data.products = data.products;
-                this.state.data_product_loaded = true;
+                this.state.data.product.loaded = true;
             }).bind(this));
         }
     },
@@ -131,7 +136,7 @@ var app = {
 
                 this.$product_table = this.constructProductTable();
 
-                if(!this.state.data_product_loaded)
+                if(!this.state.data.product.loaded)
                 {
                     let $loading_message = $('<p>').text('Loading...');
                     this.$products_div.append($loading_message);
@@ -173,7 +178,7 @@ var app = {
                 // clear
                 this.$purchases_div.empty();
 
-                if(!this.state.data_purchases_loaded)
+                if(!this.state.data.purchases.loaded)
                 {
                     let $loading_message = $('<p>').text('Loading...');
                     this.$purchases_div.append($loading_message);
@@ -215,14 +220,14 @@ var app = {
             this.state.modal_product_list = e.data.modal_product_list || false;
         }
 
-        if(this.state.tab == Tab.products && !this.state.data_product_loaded && !this.state.data_product_loading)
+        if(this.state.tab == Tab.products && !this.state.data.product.loaded && !this.state.data.product.loading)
         {
-            this.state.data_product_loading = true;
+            this.state.data.product.loading = true;
             this.load('products').done(this.changeState.bind(this));
         }
-        if (this.state.tab == Tab.purchases && !this.state.data_purchases_loaded && !this.state.data_purchases_loading) 
+        if (this.state.tab == Tab.purchases && !this.state.data.purchases.loaded && !this.state.data.purchases.loading) 
         {
-            this.state.data_purchases_loading = true;
+            this.state.data.purchases.loading = true;
             this.load('purchases').done(this.changeState.bind(this));
         }
             
