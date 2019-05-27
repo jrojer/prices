@@ -19,7 +19,7 @@ var app = {
             purchases_by_date: [],
             purchases_offset: 0,
         };
-        this.table_rows = {
+        this.table_rows_cache = {
             products: [],
             purchases: []
         };
@@ -45,15 +45,8 @@ var app = {
     load: function (type) {
         if(type == 'purchases'){
             return $.getJSON(`/get_purchase_list/${this.data.purchases_offset}/${50}`,(function(data){
-                /*
-                if(data.purchases_by_date.length == 0)
-                {
-                    this.data.all_purchases_loaded = true;
-                }
-                */
                 this.data.purchases_by_date.push(...data.purchases_by_date);
                 this.state.data.purchases.loaded = true;
-                //this.data.purchases_offset+=1;
             }).bind(this));
         }
         else{ // type == products
@@ -95,7 +88,7 @@ var app = {
         this.$radioEdit = $('#radio_edit_on');
     },
     constructProductTable: function(){   
-        this.table_rows.products = []; // TODO maybe rename to shows it's for cache
+        this.table_rows_cache.products = []; 
         let $tbody = $('<tbody>');
         let $table = $('<table>').addClass('table table-hover table-striped').append($tbody);
         for (let i = 0; i < this.data.products.length; ++i) {
@@ -103,7 +96,7 @@ var app = {
             let $row = $('<tr>').append($('<td>').text(p.name));
             $tbody.append($row);
             // cache rows
-            this.table_rows.products.push($row);
+            this.table_rows_cache.products.push($row);
         }
         return $table;
     },
@@ -148,10 +141,6 @@ var app = {
                 }
             }
         } else if (this.state.tab == Tab.purchases) {
-
-            //this.$product_table.hide();
-
-            //this.$purchase_table = this.$purchase_table || this.constructPurchasesTable();
 
             if (this.state.activate_modal) // modal
             {
@@ -202,7 +191,7 @@ var app = {
                             $row.append($('<td>').text(p.cost_rub));
                             $row.append($('<td>').text(p.comment));
                             $tbody.append($row);
-                            this.table_rows.purchases.push($row);
+                            this.table_rows_cache.purchases.push($row);
                         }
                     }
                 }
@@ -239,7 +228,7 @@ var app = {
             return;
         for (let i = 0; i < this.data.products.length; ++i) {
             let p = this.data.products[i];
-            let $row = this.table_rows.products[i];
+            let $row = this.table_rows_cache.products[i];
             let event_params = {
                 product_row: {
                     id: p.id,
@@ -285,9 +274,9 @@ var app = {
             else{ // table event listeners 
                 if(!this.data_purchases_loaded)
                     return;
-                for (let i=0; i <  this.table_rows.purchases.length; ++i) 
+                for (let i=0; i <  this.table_rows_cache.purchases.length; ++i) 
                 {
-                    let $row = this.table_rows.purchases[i];
+                    let $row = this.table_rows_cache.purchases[i];
                     let event_params = {
                         tab: Tab.purchases,
                         modal: true
