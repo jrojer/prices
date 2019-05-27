@@ -100,21 +100,20 @@ var app = {
         }
         return $table;
     },
+    fillProductForm: function(pr)
+    {
+        this.product_form.$id.attr('value', pr.id);
+        this.product_form.$name.attr('value', pr.name);
+        this.product_form.$unit.attr('value', pr.unit);
+        this.product_form.$def_qnt.attr('value', pr.def_q);
+    },
     render: function () {
-
         if (this.state.tab == Tab.products) {
-
-
             if (this.state.activate_modal) // modal
             {
                 this.purchases_form.$form.hide();
                 this.product_form.$form.show();
-
-                let pr = this.state.last_clicked_product_row;
-                this.product_form.$id.attr('value', pr.id);
-                this.product_form.$name.attr('value', pr.name);
-                this.product_form.$unit.attr('value', pr.unit);
-                this.product_form.$def_qnt.attr('value', pr.def_q);
+                this.fillProductForm(this.state.last_clicked_product_row);
                 this.$modal.modal('show');
             } else {
                 // change active tab of navbar buttons
@@ -173,6 +172,7 @@ var app = {
                     this.$purchases_div.append($loading_message);
                 }
                 else { // render purchases tables
+                    this.table_rows_cache.purchases = [];
                     for (let i = 0; i < this.data.purchases_by_date.length; ++i) {
                         let date = this.data.purchases_by_date[i].date;
                         let purchases = this.data.purchases_by_date[i].purchases;
@@ -224,7 +224,7 @@ var app = {
         this.bindEventListeners();
     },
     bindProductTableEventListeners: function(){
-        if(!this.data_product_loaded)
+        if(!this.state.data.product.loaded)
             return;
         for (let i = 0; i < this.data.products.length; ++i) {
             let p = this.data.products[i];
@@ -272,7 +272,7 @@ var app = {
                 }
             }
             else{ // table event listeners 
-                if(!this.data_purchases_loaded)
+                if(!this.state.data.purchases.loaded)
                     return;
                 for (let i=0; i <  this.table_rows_cache.purchases.length; ++i) 
                 {
