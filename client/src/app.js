@@ -47,12 +47,14 @@ var app = {
             return $.getJSON(`/get_purchase_list/${this.data.purchases_offset}/${50}`,(function(data){
                 this.data.purchases_by_date.push(...data.purchases_by_date);
                 this.state.data.purchases.loaded = true;
+                this.purchases_tables = this.constructPurchasesTables();
             }).bind(this));
         }
         else{ // type == products
             return $.getJSON('/get_product_list',(function(data){
                 this.data.products = data.products;
                 this.state.data.product.loaded = true;
+                this.$product_table = this.constructProductTable();
             }).bind(this));
         }
     },
@@ -136,25 +138,21 @@ var app = {
     },
     render: function () {
         if (this.state.tab == Tab.products) {
-            if (this.state.activate_modal) // modal
+            if (this.state.activate_modal) // modal form
             {
                 this.purchases_form.$form.hide();
                 this.product_form.$form.show();
                 this.fillProductForm(this.state.last_clicked_product_row);
                 this.$modal.modal('show');
-            } else {
+            } else { // regular table
                 // change active tab of navbar buttons
                 this.$navbar_purchases_link.addClass('active');
                 this.$navbar_product_link.removeClass('active');
                 // hide purchases table
                 this.$purchases_div.hide();
                 this.$products_div.show();
-
                 // clear
                 this.$products_div.empty();
-
-                this.$product_table = this.constructProductTable();
-
                 if(!this.state.data.product.loaded)
                 {
                     let $loading_message = $('<p>').text('Loading...');
@@ -199,9 +197,8 @@ var app = {
                     this.$purchases_div.append($loading_message);
                 }
                 else { // render purchases tables
-                    let tables = this.constructPurchasesTables();
-                    for (let i = 0; i < tables.length; ++i) {
-                        this.$purchases_div.append(tables[i].$header_div).append(tables[i].$table_div);
+                    for (let i = 0; i < this.purchases_tables.length; ++i) {
+                        this.$purchases_div.append(this.purchases_tables[i].$header_div).append(this.purchases_tables[i].$table_div);
                     }
                 }
             }
