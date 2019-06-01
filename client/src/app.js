@@ -19,7 +19,7 @@ var app = {
             purchases_by_date: [],
             purchases_offset: 0,
         };
-        this.table_rows_cache = {
+        this.table_rows = {
             products: [],
             purchases: []
         };
@@ -90,7 +90,7 @@ var app = {
         this.$radioEdit = $('#radio_edit_on');
     },
     constructProductTable: function(){   
-        this.table_rows_cache.products = []; 
+        this.table_rows.products = []; 
         let $tbody = $('<tbody>');
         let $table = $('<table>').addClass('table table-hover table-striped').append($tbody);
         for (let i = 0; i < this.data.products.length; ++i) {
@@ -98,14 +98,14 @@ var app = {
             let $row = $('<tr>').append($('<td>').text(p.name));
             $tbody.append($row);
             // cache rows
-            this.table_rows_cache.products.push($row);
+            this.table_rows.products.push({row:$row, item: p});
         }
         return $table;
     },
     constructPurchasesTables: function()
     {
         let result = [];
-        this.table_rows_cache.purchases = [];
+        this.table_rows.purchases = [];
         for (let i = 0; i < this.data.purchases_by_date.length; ++i) {
             let date = this.data.purchases_by_date[i].date;
             let purchases = this.data.purchases_by_date[i].purchases;
@@ -123,7 +123,7 @@ var app = {
                 $row.append($('<td>').text(p.cost_rub));
                 $row.append($('<td>').text(p.comment));
                 $tbody.append($row);
-                this.table_rows_cache.purchases.push($row);
+                this.table_rows.purchases.push($row);
             }
             result.push({$header_div,$table_div});
         }
@@ -134,7 +134,7 @@ var app = {
         this.product_form.$id.attr('value', pr.id);
         this.product_form.$name.attr('value', pr.name);
         this.product_form.$unit.attr('value', pr.unit);
-        this.product_form.$def_qnt.attr('value', pr.def_q);
+        this.product_form.$def_qnt.attr('value', pr.default_quantity);
     },
     render: function () {
         if (this.state.tab == Tab.products) {
@@ -142,7 +142,6 @@ var app = {
             {
                 this.purchases_form.$form.hide();
                 this.product_form.$form.show();
-                this.fillProductForm(this.state.last_clicked_product_row);
                 this.$modal.modal('show');
             } else { // regular table
                 // change active tab of navbar buttons
@@ -213,6 +212,8 @@ var app = {
             this.state.last_clicked_product_row = e.data.product_row || blank_product_row;
             this.state.activate_modal = e.data.modal || false;
             this.state.modal_product_list = e.data.modal_product_list || false;
+            if(e.data.product_row)
+                this.fillProductForm(e.data.product_row);
         }
 
         if(this.state.tab == Tab.products && !this.state.data.product.loaded && !this.state.data.product.loading)
@@ -228,24 +229,18 @@ var app = {
             
         this.render();
         this.bindEventListeners();
+        //console.log('state changed');
     },
     bindProductTableEventListeners: function(){
         if(!this.state.data.product.loaded)
             return;
-        for (let i = 0; i < this.data.products.length; ++i) {
-            let p = this.data.products[i];
-            let $row = this.table_rows_cache.products[i];
+        this.table_rows.products.forEach((item) => {
             let event_params = {
-                product_row: {
-                    id: p.id,
-                    name: p.name,
-                    unit: p.unit,
-                    def_q: p.default_quantity
-                },
+                product_row: item.item,
                 modal: true
             };
-            $row.off('click').on('click', event_params, this.changeState.bind(this));
-        }
+            item.row.off('click').on('click', event_params, this.changeState.bind(this));
+        });
     },
     bindEventListeners: function () {
         $(window).off();
@@ -280,9 +275,9 @@ var app = {
             else{ // table event listeners 
                 if(!this.state.data.purchases.loaded)
                     return;
-                for (let i=0; i <  this.table_rows_cache.purchases.length; ++i) 
+                for (let i=0; i <  this.table_rows.purchases.length; ++i) 
                 {
-                    let $row = this.table_rows_cache.purchases[i];
+                    let $row = this.table_rows.purchases[i];
                     let event_params = {
                         tab: Tab.purchases,
                         modal: true
