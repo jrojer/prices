@@ -93,30 +93,24 @@ var app = {
         this.table_rows.products = []; 
         let $tbody = $('<tbody>');
         let $table = $('<table>').addClass('table table-hover table-striped').append($tbody);
-        for (let i = 0; i < this.data.products.length; ++i) {
-            let p = this.data.products[i];
+        this.data.products.forEach((p) => {
             let $row = $('<tr>').append($('<td>').text(p.name));
             $tbody.append($row);
-            // cache rows
             this.table_rows.products.push({row:$row, item: p});
-        }
+        });
         return $table;
     },
     constructPurchasesTables: function()
     {
         let result = [];
         this.table_rows.purchases = [];
-        for (let i = 0; i < this.data.purchases_by_date.length; ++i) {
-            let date = this.data.purchases_by_date[i].date;
-            let purchases = this.data.purchases_by_date[i].purchases;
-
-            let $header_div = $('<div>').addClass('d-flex justify-content-between').append($('<h3>').text(date));
+        this.data.purchases_by_date.forEach((item) => {
+            let $header_div = $('<div>').addClass('d-flex justify-content-between').append($('<h3>').text(item.date));
             let $tbody = $('<tbody>');
             let $table = $('<table>').addClass('table table-sm table-striped table-hover').append($tbody);
             let $table_div = $('<div>').addClass('table-responsive').append($table);
 
-            for (let j = 0; j < purchases.length; ++j) {
-                let p = purchases[j];
+            item.purchases.forEach((p) => {
                 let $row = $('<tr>');
                 $row.append($('<td>').text(p.product));
                 $row.append($('<td>').text(p.quantity));
@@ -124,9 +118,9 @@ var app = {
                 $row.append($('<td>').text(p.comment));
                 $tbody.append($row);
                 this.table_rows.purchases.push($row);
-            }
+            });
             result.push({$header_div,$table_div});
-        }
+        });
         return result;
     },
     fillProductForm: function(pr)
