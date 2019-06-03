@@ -4,12 +4,18 @@ var Tab = Object.freeze({
     stats: 3
 });
 
-var blank_product_row = Object.freeze({
-    id: '',
-    name: '',
-    unit: '',
-    def_q: '',
+var blank_row = Object.freeze({
+    product : {
+        id: '',
+        name: '',
+        unit: '',
+        def_q: '',
+    },
+    purchase : {
+
+    }
 });
+
 
 var app = {
 
@@ -24,7 +30,11 @@ var app = {
             purchases: []
         };
         this.state = {
-            last_clicked_product_row: blank_product_row,
+            current_table_row :
+            {
+                product: blank_row.product,
+                purchase: blank_row.purchase,
+            },
             tab: Tab.products,
             activate_modal: false,
             modal_product_list: false,
@@ -136,6 +146,7 @@ var app = {
             {
                 this.purchases_form.$form.hide();
                 this.product_form.$form.show();
+                this.fillProductForm(this.state.current_table_row.product);
                 this.$modal.modal('show');
             } else { // regular table
                 // change active tab of navbar buttons
@@ -148,8 +159,7 @@ var app = {
                 this.$products_div.empty();
                 if(!this.state.data.product.loaded)
                 {
-                    let $loading_message = $('<p>').text('Loading...');
-                    this.$products_div.append($loading_message);
+                    this.$products_div.append($('<p>').text('Loading...'));
                 }
                 else
                 {
@@ -169,7 +179,7 @@ var app = {
                 }
                 else{
                     this.$product_table.hide();
-                    this.purchases_form.$product.attr('value',this.state.last_clicked_product_row.name);
+                    this.purchases_form.$product.attr('value',this.state.current_table_row.product.name);
                     this.purchases_form.$form.show();
                 }
                 this.$modal.modal('show');
@@ -203,11 +213,9 @@ var app = {
         if(e && e.data)
         {
             this.state.tab = e.data.tab || this.state.tab;
-            this.state.last_clicked_product_row = e.data.product_row || blank_product_row;
+            this.state.current_table_row.product = e.data.product_row || blank_row.product;
             this.state.activate_modal = e.data.modal || false;
             this.state.modal_product_list = e.data.modal_product_list || false;
-            if(e.data.product_row)
-                this.fillProductForm(e.data.product_row);
         }
 
         if(this.state.tab == Tab.products && !this.state.data.product.loaded && !this.state.data.product.loading)
