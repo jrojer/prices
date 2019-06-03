@@ -14,7 +14,6 @@ class Product(models.Model):
     units = ( ('g', 'gram'), ('ml', 'milliliter'), ('p','piece'))
     unit = models.CharField(max_length=2,choices=units, default = 'g')
     default_quantity = models.PositiveIntegerField(null=True, blank=True)
-    selected = models.BooleanField()
 
     def __str__(self):
         if self.category == None:
